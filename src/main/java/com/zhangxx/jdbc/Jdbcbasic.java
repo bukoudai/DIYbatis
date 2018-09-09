@@ -1,12 +1,16 @@
 package com.zhangxx.jdbc;
 
+import com.zhangxx.diybatis.cfg.Configuration;
+import com.zhangxx.diybatis.cfg.Mapper;
 import org.dom4j.Document;
+import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
 
 import java.sql.*;
 import java.util.List;
+import java.util.Map;
 
 public class Jdbcbasic {
 
@@ -21,56 +25,9 @@ public class Jdbcbasic {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
 
-        try {
-            String driver;
-            String url;
-            String username;
-            String password;
-            String xmlurl;
-            xmlurl="diybatisConfiguration.xml";
-            //定义封装连接信息的配置对象（mybatis的配置对象）
-            Configuration cfg = new Configuration();
-
-            //1.获取SAXReader对象
-            SAXReader reader = new SAXReader();
-            //2.根据字节输入流获取Document对象
-            Document document = reader.read(xmlurl);
-            //3.获取根节点
-            Element root = document.getRootElement();
-            //4.使用xpath中选择指定节点的方式，获取所有property节点
-            List<Element> propertyElements = root.selectNodes("//dataSource/property");
-            //5.遍历节点
-            for(Element propertyElement : propertyElements){
-                //判断节点是连接数据库的哪部分信息
-                //取出name属性的值
-                String name = propertyElement.attributeValue("name");
-                if("driver".equals(name)){
-                    //表示驱动
-                    //获取property标签value属性的值
-                    driver = propertyElement.attributeValue("value");
-                    cfg.setDriver(driver);
-                }
-                if("url".equals(name)){
-                    //表示连接字符串
-                    //获取property标签value属性的值
-                    url = propertyElement.attributeValue("value");
-                    cfg.setUrl(url);
-                }
-                if("username".equals(name)){
-                    //表示用户名
-                    //获取property标签value属性的值
-                    username = propertyElement.attributeValue("value");
-                    cfg.setUsername(username);
-                }
-                if("password".equals(name)){
-                    //表示密码
-                    //获取property标签value属性的值
-                    password = propertyElement.attributeValue("value");
-                    cfg.setPassword(password);
-                }
-            }
-
-            //加载数据库驱动
+            try {
+                Configuration cfg = loadConfiguration();
+                //加载数据库驱动
             Class.forName(cfg.getDriver());
 
             //通过驱动管理类获取数据库链接
@@ -117,5 +74,77 @@ public class Jdbcbasic {
             }
 
         }
+    }
+
+    /**
+     * 加载配置文件
+     * @return
+     * @throws DocumentException
+     */
+    public Configuration loadConfiguration() throws DocumentException {
+        String driver;
+        String url;
+        String username;
+        String password;
+        String xmlurl;
+        xmlurl="diybatisConfiguration.xml";
+        //定义封装连接信息的配置对象（mybatis的配置对象）
+        Configuration cfg = new Configuration();
+
+        //1.获取SAXReader对象
+        SAXReader reader = new SAXReader();
+        //2.根据字节输入流获取Document对象
+        Document document = reader.read(xmlurl);
+        //3.获取根节点
+        Element root = document.getRootElement();
+        //数据库节点
+        //4.使用xpath中选择指定节点的方式，获取所有property节点
+        List<Element> propertyElements = root.selectNodes("//dataSource/property");
+        //5.遍历节点
+        for(Element propertyElement : propertyElements){
+            //判断节点是连接数据库的哪部分信息
+            //取出name属性的值
+            String name = propertyElement.attributeValue("name");
+            if("driver".equals(name)){
+                //表示驱动
+                //获取property标签value属性的值
+                driver = propertyElement.attributeValue("value");
+                cfg.setDriver(driver);
+            }
+            if("url".equals(name)){
+                //表示连接字符串
+                //获取property标签value属性的值
+                url = propertyElement.attributeValue("value");
+                cfg.setUrl(url);
+            }
+            if("username".equals(name)){
+                //表示用户名
+                //获取property标签value属性的值
+                username = propertyElement.attributeValue("value");
+                cfg.setUsername(username);
+            }
+            if("password".equals(name)){
+                //表示密码
+                //获取property标签value属性的值
+                password = propertyElement.attributeValue("value");
+                cfg.setPassword(password);
+            }
+        }
+
+        //映射文件读取
+        Map<String, Mapper> mappers = cfg.getMappers();
+        List<Element> mappersElements =root.selectNodes("//mappers/mapper");
+        for (Element element:mappersElements ) {
+            //判断节点是连接数据库的哪部分信息
+            //取出name属性的值
+            String id = element.attributeValue("id");
+            String resultType = element.attributeValue("resultType");
+            String queryString=element.getTextTrim();
+            Mapper mapper = new Mapper();
+            mapper.setQueryString(queryString);
+            mapper.setResultType(resultType);
+            mappers.put(id,mapper);
+        }
+        return cfg;
     }
 }

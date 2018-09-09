@@ -10,6 +10,10 @@
         <property name="username" value="root"/>
         <property name="password" value="root"/>
     </dataSource>
-
+    <!-- 指定映射配置文件的位置，映射配置文件指的是每个dao独立的配置文件 -->
+    <mappers>
+        <mapper resource="com/zhangxx/dao/IUserDao.xml"/>
+        <!--<mapper class="ccom.zhangxx.domain.User"/>-->
+    </mappers>
 
 </configuration>
